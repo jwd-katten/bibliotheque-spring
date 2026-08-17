@@ -2,10 +2,12 @@ package ensaf.bibliotheque.controller;
 
 import ensaf.bibliotheque.model.Livre;
 import ensaf.bibliotheque.service.LivreService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/livres")
@@ -17,67 +19,54 @@ public class LivreController {
         this.livreService = livreService;
     }
 
-    // GET /api/livres
     @GetMapping
-    public List<Livre> getAllLivres() {
+    public List<Livre> lister(
+            @RequestParam(required = false) String titre,
+            @RequestParam(required = false) String auteur) {
+
+        if (titre != null || auteur != null) {
+            return livreService.rechercher(titre, auteur);
+        }
         return livreService.findAll();
     }
 
-    // GET /api/livres/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<Livre> getLivreById(@PathVariable Long id) {
-
+    public ResponseEntity<?> trouver(@PathVariable Long id) {
         return livreService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(livre -> ResponseEntity.ok((Object) livre))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Livre non trouvé avec l'id " + id)));
     }
 
-    // POST /api/livres
     @PostMapping
-    public Livre createLivre(@RequestBody Livre livre) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public Livre ajouter(@RequestBody Livre livre) {
         return livreService.save(livre);
     }
 
-    // PUT /api/livres/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<Livre> updateLivre(
+    public ResponseEntity<?> modifier(
             @PathVariable Long id,
             @RequestBody Livre livre) {
 
-        return livreService.findById(id)
-                .map(existingLivre -> {
+        var existing = livreService.findById(id);
+        if (existing.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Livre non trouvé avec l'id " + id));
+        }
 
-                    existingLivre.setTitre(livre.getTitre());
-                    existingLivre.setIsbn(livre.getIsbn());
-                    existingLivre.setAnneePublication(
-                            livre.getAnneePublication()
-                    );
-                    existingLivre.setCategorie(livre.getCategorie());
-                    existingLivre.setArchivage(livre.getArchivage());
-                    existingLivre.setAuteurs(livre.getAuteurs());
-
-                    return ResponseEntity.ok(
-                            livreService.save(existingLivre)
-                    );
-                })
-                .orElse(ResponseEntity.notFound().build());
+        Livre existingLivre = existing.get();
+        existingLivre.setTitre(livre.getTitre());
+        existingLivre.setAnnee(livre.getAnnee());
+        existingLivre.setEditeur(livre.getEditeur());
+        existingLivre.setNbExemplaires(livre.getNbExemplaires());
+        existingLivre.setCategorie(livre.getCategorie());
+        existingLivre.setAuteurs(livre.getAuteurs());
+        return ResponseEntity.ok(livreService.save(existingLivre));
     }
 
-
-    // POST /api/livres/{livreId}/auteurs/{auteurId}
-    @PostMapping("/{livreId}/auteurs/{auteurId}")
-    public ResponseEntity<Livre> ajouterAuteur(
-        @PathVariable Long livreId,
-        @PathVariable Long auteurId) {
-
-    return livreService.ajouterAuteur(livreId, auteurId)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
-}
-
-    // DELETE /api/livres/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteLivre(@PathVariable Long id) {
+    public ResponseEntity<Void> supprimer(@PathVariable Long id) {
 
         if (livreService.findById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -86,5 +75,15 @@ public class LivreController {
         livreService.deleteById(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{livreId}/auteurs/{auteurId}")
+    public ResponseEntity<Livre> ajouterAuteur(
+            @PathVariable Long livreId,
+            @PathVariable Long auteurId) {
+
+        return livreService.ajouterAuteur(livreId, auteurId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

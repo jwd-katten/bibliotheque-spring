@@ -1,7 +1,9 @@
 package ensaf.bibliotheque.model;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +21,10 @@ public class Auteur {
 
     @Column(nullable = false)
     private String prenom;
+
+    private String nationalite;
+
+    private LocalDate dateNaissance;
 
     @JsonIgnore
     @ManyToMany(mappedBy = "auteurs")
@@ -54,6 +60,22 @@ public class Auteur {
 
     public void setPrenom(String prenom) {
         this.prenom = prenom;
+    }
+
+    public String getNationalite() {
+        return nationalite;
+    }
+
+    public void setNationalite(String nationalite) {
+        this.nationalite = nationalite;
+    }
+
+    public LocalDate getDateNaissance() {
+        return dateNaissance;
+    }
+
+    public void setDateNaissance(LocalDate dateNaissance) {
+        this.dateNaissance = dateNaissance;
     }
 
     public List<Livre> getLivres() {

@@ -39,7 +39,6 @@ public class LivreService {
         livreRepository.deleteById(id);
     }
 
-    // Ajouter un auteur à un livre
     public Optional<Livre> ajouterAuteur(Long livreId, Long auteurId) {
 
         Optional<Livre> livreOpt = livreRepository.findById(livreId);
@@ -57,5 +56,19 @@ public class LivreService {
         }
 
         return Optional.of(livreRepository.save(livre));
+    }
+
+    public List<Livre> rechercher(String titre, String auteur) {
+        if (titre != null && !titre.isEmpty() && auteur != null && !auteur.isEmpty()) {
+            List<Livre> parTitre = livreRepository.findByTitreContainingIgnoreCase(titre);
+            List<Livre> parAuteur = livreRepository.findByAuteursNomContainingIgnoreCase(auteur);
+            parTitre.retainAll(parAuteur);
+            return parTitre;
+        } else if (titre != null && !titre.isEmpty()) {
+            return livreRepository.findByTitreContainingIgnoreCase(titre);
+        } else if (auteur != null && !auteur.isEmpty()) {
+            return livreRepository.findByAuteursNomContainingIgnoreCase(auteur);
+        }
+        return livreRepository.findAll();
     }
 }
